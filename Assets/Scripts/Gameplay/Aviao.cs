@@ -30,7 +30,7 @@ public class Aviao : MonoBehaviour {
     private void Update () {
        
       
-        this.animacao.SetFloat("VelocidadeY", this.fisica.velocity.y);
+        this.animacao.SetFloat("VelocidadeY", this.fisica.linearVelocity.y);
 	}
 
     private void FixedUpdate()
@@ -53,7 +53,7 @@ public class Aviao : MonoBehaviour {
 
     private void Impulsionar()
     {
-        this.fisica.velocity = Vector2.zero;
+        this.fisica.linearVelocity = Vector2.zero;
         this.fisica.AddForce(Vector2.up * this.forca, ForceMode2D.Impulse);
         this.deveImpulsionar = false;
     }
