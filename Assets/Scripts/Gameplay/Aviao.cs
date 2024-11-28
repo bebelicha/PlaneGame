@@ -3,20 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class Aviao : MonoBehaviour {
+public class Aviao : MonoBehaviour
+{
     private Rigidbody2D fisica;
     [SerializeField]
     private float forca;
-     [SerializeField]
-     private UnityEvent aoBater;
-  
-  [SerializeField]
-  private UnityEvent aoPassarPeloObstaculo;
+    [SerializeField]
+    private UnityEvent aoBater;
+
+    [SerializeField]
+    private UnityEvent aoPassarPeloObstaculo;
     private Vector3 posicaoInicial;
     private bool deveImpulsionar;
     private Animator animacao;
-
-
 
     private void Awake()
     {
@@ -25,26 +24,24 @@ public class Aviao : MonoBehaviour {
         this.animacao = this.GetComponent<Animator>();
     }
 
-   
-
-    private void Update () {
-       
-      
+    private void Update()
+    {
         this.animacao.SetFloat("VelocidadeY", this.fisica.linearVelocity.y);
-	}
+    }
 
     private void FixedUpdate()
     {
-        if(this.deveImpulsionar)
+        if (this.deveImpulsionar)
         {
             this.Impulsionar();
         }
-        
     }
+
     public void DarImpulso()
     {
         this.deveImpulsionar = true;
     }
+
     public void Reiniciar()
     {
         this.transform.position = this.posicaoInicial;
@@ -60,10 +57,21 @@ public class Aviao : MonoBehaviour {
 
     private void OnCollisionEnter2D(Collision2D colisao)
     {
-        this.fisica.simulated = false;
-        this.aoBater.Invoke();
-        
+        if (colisao.gameObject.CompareTag("Barreira"))
+        {
+            // Lógica para barrar o jogador sem destruir o objeto nem terminar o jogo
+            this.fisica.linearVelocity = Vector2.zero; // Exemplo: parar o movimento do jogador
+        }
+        else if (colisao.gameObject.CompareTag("Obstaculo"))
+        {
+            // Lógica normal de colisão
+            this.aoBater.Invoke();
+            this.animacao.SetTrigger("bater");
+            this.fisica.simulated = false;
+            Object.FindFirstObjectByType<Diretor>().FinalizarJogo();
+        }
     }
+
     private void OnTriggerEnter2D()
     {
         this.aoPassarPeloObstaculo.Invoke();

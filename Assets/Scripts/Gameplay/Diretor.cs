@@ -39,8 +39,8 @@ public class Diretor : MonoBehaviour {
 
     private void DestruirObstaculos()
     {
-        Obstaculo[] obstaculos = GameObject.FindObjectsOfType<Obstaculo>();
-        foreach(Obstaculo obstaculo in obstaculos)
+        Obstaculo[] obstaculos = GameObject.FindObjectsByType<Obstaculo>(FindObjectsSortMode.None);
+        foreach (Obstaculo obstaculo in obstaculos)
         {
             obstaculo.Destruir();
         }
