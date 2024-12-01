@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jogo WebGL</title>
+    <script>
+        function UnityReady() {
+            console.log("Unity está pronto");
+        }
+
+        function SalvarConfiguracao(chave, valor) {
+            console.log("Salvar configuração:", chave, valor);
+            // Enviar dados para o aplicativo Flutter
+            if (window.flutter_inappwebview) {
+                window.flutter_inappwebview.callHandler('salvarConfiguracao', chave, valor);
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="unityContainer"></div>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+        var gameInstance = UnityLoader.instantiate("unityContainer", "Build/Build.json");
+    </script>
+</body>
+</html>
+
+import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+
+class JogoWebGLPage extends StatefulWidget {
+  @override
+  _JogoWebGLPageState createState() => _JogoWebGLPageState();
+}
+
+class _JogoWebGLPageState extends State<JogoWebGLPage> {
+  InAppWebViewController _webViewController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Jogo WebGL'),
+      ),
+      body: InAppWebView(
+        initialUrlRequest: URLRequest(url: Uri.parse('assets/webgl/index.html')),
+        onWebViewCreated: (controller) {
+          _webViewController = controller;
+
+          // Adicionar manipulador para salvar configuração
+          _webViewController.addJavaScriptHandler(
+            handlerName: 'salvarConfiguracao',
+            callback: (args) {
+              String chave = args[0];
+              double valor = args[1];
+              // Salvar configuração localmente
+              _salvarConfiguracao(chave, valor);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _salvarConfiguracao(String chave, double valor) async {
+    // Salvar configuração usando SharedPreferences ou outro método de persistência
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(chave, valor);
+  }
+}

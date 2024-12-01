@@ -10,7 +10,6 @@ public class Aviao : MonoBehaviour
     private float forca;
     [SerializeField]
     private UnityEvent aoBater;
-
     [SerializeField]
     private UnityEvent aoPassarPeloObstaculo;
     private Vector3 posicaoInicial;
@@ -48,6 +47,17 @@ public class Aviao : MonoBehaviour
         this.fisica.simulated = true;
     }
 
+    public void AlterarGravityScale(float valor)
+    {
+        this.fisica.gravityScale = valor;
+    }
+
+     public void AlterarAngularDamping(float valor)
+    {
+       this.fisica.angularDamping = valor;
+    }
+
+
     private void Impulsionar()
     {
         this.fisica.linearVelocity = Vector2.zero;
@@ -59,12 +69,10 @@ public class Aviao : MonoBehaviour
     {
         if (colisao.gameObject.CompareTag("Barreira"))
         {
-            // Lógica para barrar o jogador sem destruir o objeto nem terminar o jogo
-            this.fisica.linearVelocity = Vector2.zero; // Exemplo: parar o movimento do jogador
+            this.fisica.linearVelocity = Vector2.zero;
         }
         else if (colisao.gameObject.CompareTag("Obstaculo"))
         {
-            // Lógica normal de colisão
             this.aoBater.Invoke();
             this.animacao.SetTrigger("bater");
             this.fisica.simulated = false;
