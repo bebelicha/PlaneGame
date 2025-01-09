@@ -147,7 +147,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      "GameOver - co\u0301pia_0": -1830805240319032511
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 public class Menu : MonoBehaviour
 {
     [SerializeField]
-    private Canvas menuInicial;
+    private RectTransform menuInicial;
     [SerializeField]
     private Button botaoIniciar;
     [SerializeField]
@@ -15,7 +15,7 @@ public class Menu : MonoBehaviour
     [SerializeField]
     private Button voltarMenu2;
     [SerializeField]
-    private Canvas menuConfiguracoes;
+    private RectTransform menuConfiguracoes;
     [SerializeField]
     private Canvas menuGameOver;
     [SerializeField]
