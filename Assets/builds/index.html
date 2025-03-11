@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity Web Player | PlaneGame</title>
+  </head>
+  <body style="text-align: center; padding: 0; border: 0; margin: 0;">
+    <canvas id="unity-canvas" width="1200" height="800" tabindex="-1" style="width: 1200px; height: 800px; background: #231F20"></canvas>
+    <script src="Build/builds.loader.js"></script>
+    <script>
+      var unityInstance;
+
+      // Inicializa o Unity
+      createUnityInstance(document.querySelector("#unity-canvas"), {
+          dataUrl: "Build/builds.data",
+          frameworkUrl: "Build/builds.framework.js",
+          codeUrl: "Build/builds.wasm",
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: "DefaultCompany",
+          productName: "PlaneGame",
+          productVersion: "1.0",
+      }).then((instance) => {
+          unityInstance = instance; 
+          // Envia a data para o Unity imediatamente após a inicialização
+          sendDateToUnity();
+          // Continua enviando a data a cada 5 segundos
+          setInterval(sendDateToUnity, 1000);
+      }).catch((message) => {
+          console.error(message);
+      });
+
+      function sendDateToUnity() {
+          if (unityInstance) {
+              const timestamp = Date.now(); 
+              const date = new Date(timestamp); 
+              const formattedDate = date.toLocaleString("pt-BR", {
+                  timeZone: "America/Sao_Paulo",
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+              });
+              unityInstance.SendMessage('DateReceiver', 'Date', formattedDate);
+          } else {
+              console.error("Unity ainda não foi inicializado.");
+          }
+      }
+    </script>
+<!--     <div style="border: solid 1px black; width: 200px; height: 30px; margin: auto; text-align: center;"> 
+      Botão 
+    </div> -->
+  </body>
+</html>
