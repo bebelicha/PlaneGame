@@ -3,13 +3,26 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | PlaneGame</title>
+    <title>Conversia Game Hub</title>
   </head>
   <body style="text-align: center; padding: 0; border: 0; margin: 0;">
     <canvas id="unity-canvas" width="1200" height="800" tabindex="-1" style="width: 1200px; height: 800px; background: #231F20"></canvas>
     <script src="Build/builds.loader.js"></script>
     <script>
       var unityInstance;
+
+      window.addEventListener('message', function(event) {
+          console.log(" DYGYWETFGYTEYFTETMessage received from the parent: " + JSON.stringify(event.data)); 
+
+          const dataToSend = {
+              type: event.data.type || "MappingsOutputType.feedbackPositionH", // Tipo vindo do evento ou padrão
+              value: event.data.state?.rescaledValue || 0,                    // Valor rescalado
+              resolution: event.data.setting?.resolution || 6,               // Resolução padrão
+              captureTime: event.data.captureTime || Date.now()              // Tempo de captura
+          };
+
+          sendDateToUnity(dataToSend);
+      });
 
       // Inicializa o Unity
       createUnityInstance(document.querySelector("#unity-canvas"), {
@@ -22,35 +35,19 @@
           productVersion: "1.0",
       }).then((instance) => {
           unityInstance = instance; 
-          // Envia a data para o Unity imediatamente após a inicialização
-          sendDateToUnity();
-          // Continua enviando a data a cada 5 segundos
-          setInterval(sendDateToUnity, 1000);
+          console.log("Unity inicializado com sucesso.");
       }).catch((message) => {
           console.error(message);
       });
 
-      function sendDateToUnity() {
+      function sendDateToUnity(data) {
           if (unityInstance) {
-              const timestamp = Date.now(); 
-              const date = new Date(timestamp); 
-              const formattedDate = date.toLocaleString("pt-BR", {
-                  timeZone: "America/Sao_Paulo",
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-              });
-              unityInstance.SendMessage('DateReceiver', 'Date', formattedDate);
+              unityInstance.SendMessage('DateReceiver', 'Date', JSON.stringify(data));
+              console.log("Dados enviados para o Unity:", data);
           } else {
               console.error("Unity ainda não foi inicializado.");
           }
       }
     </script>
-<!--     <div style="border: solid 1px black; width: 200px; height: 30px; margin: auto; text-align: center;"> 
-      Botão 
-    </div> -->
   </body>
 </html>
