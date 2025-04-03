@@ -1,0 +1,35 @@
+//iframe.page.ts
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { MappingsService } from 'src/app/nav-processing/mappings/mappings.service';
+
+@Component({
+  selector: 'app-iframe',
+  templateUrl: './iframe.page.html',
+  styleUrls: ['./iframe.page.scss'],
+})
+export class IframePage implements OnInit {
+
+  @ViewChild('gameiframe') iframe: ElementRef<HTMLIFrameElement>;
+
+  private outputSub: Subscription;
+
+
+  constructor(
+    private mappings: MappingsService
+  ) { }
+
+  ngOnInit() {
+  }
+
+  ionViewDidEnter() {
+    this.outputSub = this.mappings.outputBS.subscribe( value => {
+      //console.log('IFRAME', value);
+
+      this.iframe.nativeElement.contentWindow.postMessage(value,'*');
+    });
+    
+  }
+  
+
+}
