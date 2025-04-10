@@ -10,21 +10,20 @@
     <script src="Build/builds.loader.js"></script>
     <script>
       var unityInstance;
-
+      console.log("Message Conversia Game Hub");
       window.addEventListener('message', function(event) {
-          console.log(" DYGYWETFGYTEYFTETMessage received from the parent: " + JSON.stringify(event.data)); 
+          console.log("Mensagem recebida do parent:", event.data);
 
           const dataToSend = {
-              type: event.data.type || "MappingsOutputType.feedbackPositionH", // Tipo vindo do evento ou padrão
-              value: event.data.state?.rescaledValue || 0,                    // Valor rescalado
-              resolution: event.data.setting?.resolution || 6,               // Resolução padrão
-              captureTime: event.data.captureTime || Date.now()              // Tempo de captura
+              type: event.data?.type || "defaultType", 
+              value: event.data?.state?.rescaledValue || 0, 
+              resolution: event.data?.setting?.resolution || 0, 
+              captureTime: event.data?.captureTime || Date.now() 
           };
 
           sendDateToUnity(dataToSend);
       });
 
-      // Inicializa o Unity
       createUnityInstance(document.querySelector("#unity-canvas"), {
           dataUrl: "Build/builds.data",
           frameworkUrl: "Build/builds.framework.js",
@@ -42,8 +41,9 @@
 
       function sendDateToUnity(data) {
           if (unityInstance) {
-              unityInstance.SendMessage('DateReceiver', 'Date', JSON.stringify(data));
-              console.log("Dados enviados para o Unity:", data);
+              const jsonData = JSON.stringify(data);
+              unityInstance.SendMessage('DateReceiver', 'Date', jsonData);
+              console.log("Dados enviados para o Unity:", jsonData);
           } else {
               console.error("Unity ainda não foi inicializado.");
           }

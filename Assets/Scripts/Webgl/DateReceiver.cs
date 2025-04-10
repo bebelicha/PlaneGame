@@ -8,26 +8,39 @@ public class DateReceiver : MonoBehaviour
     [System.Serializable]
     public class DateObject
     {
-        public string type;       
-        public float value;       
-        public int resolution;   
-        public long captureTime;  
+        public string type;
+        public float value;
+        public int resolution;
+        public long captureTime;
     }
 
     public void Date(string jsonData)
     {
-        DateObject dateObject = JsonUtility.FromJson<DateObject>(jsonData);
+        try
+        {
+            DateObject dateObject = JsonUtility.FromJson<DateObject>(jsonData);
 
-        if (textField != null)
-        {
-            textField.text = $"Type: {dateObject.type}\n" +
-                             $"Value: {dateObject.value}\n" +
-                             $"Resolution: {dateObject.resolution}\n" +
-                             $"CaptureTime: {dateObject.captureTime}";
+            if (dateObject == null)
+            {
+                Debug.LogError("Erro: JSON desserializado como nulo.");
+                return;
+            }
+
+            if (textField != null)
+            {
+                textField.text = $"Type: {dateObject.type}\n" +
+                                 $"Value: {dateObject.value}\n" +
+                                 $"Resolution: {dateObject.resolution}\n" +
+                                 $"CaptureTime: {dateObject.captureTime}";
+            }
+            else
+            {
+                Debug.LogError("Campo de texto n√£o atribu√≠do.");
+            }
         }
-        else
+        catch (System.Exception ex)
         {
-            Debug.LogError("Campo de texto n„o atribuÌdo.");
+            Debug.LogError($"Erro ao processar JSON: {ex.Message}\nJSON recebido: {jsonData}");
         }
     }
 }
