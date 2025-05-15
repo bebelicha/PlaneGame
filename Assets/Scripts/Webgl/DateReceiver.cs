@@ -1,9 +1,13 @@
+using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
+using static DateReceiver;
 
 public class DateReceiver : MonoBehaviour
 {
     public Text textField;
+    private Aviao aviao;
 
     [System.Serializable]
     public class DateObject
@@ -14,33 +18,33 @@ public class DateReceiver : MonoBehaviour
         public long captureTime;
     }
 
+    [SerializeField]
+    private UnityEvent aoPressionarTecla;
+
+    public string teste;
+
+  
+
+    private void Start()
+    {
+        this.aviao = GameObject.FindObjectOfType<Aviao>(); 
+    }
+   
     public void Date(string jsonData)
     {
-        try
+        DateObject dateObject = JsonUtility.FromJson<DateObject>(jsonData);
+        if (dateObject.type == "10")
         {
-            DateObject dateObject = JsonUtility.FromJson<DateObject>(jsonData);
-
-            if (dateObject == null)
-            {
-                Debug.LogError("Erro: JSON desserializado como nulo.");
-                return;
-            }
-
-            if (textField != null)
-            {
-                textField.text = $"Type: {dateObject.type}\n" +
-                                 $"Value: {dateObject.value}\n" +
-                                 $"Resolution: {dateObject.resolution}\n" +
-                                 $"CaptureTime: {dateObject.captureTime}";
-            }
-            else
-            {
-                Debug.LogError("Campo de texto não atribuído.");
-            }
+            textField.text = $"Type: {dateObject.type}, " +
+                             //Type = 10 Dar impulso no avião
+                             $"Value: {dateObject.value}, " +
+                             $"Resolution: {dateObject.resolution}, " +
+                             $"CaptureTime: {dateObject.captureTime}";
+            teste = dateObject.type;
+            this.aoPressionarTecla.Invoke();
         }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"Erro ao processar JSON: {ex.Message}\nJSON recebido: {jsonData}");
-        }
+
     }
+
+    
 }
