@@ -8,7 +8,8 @@ public class DateReceiver : MonoBehaviour
 {
     public Text textField;
     private Aviao aviao;
-
+    private Menu menu;
+    private InterfaceGameOver interfaceGameOver;
     [System.Serializable]
     public class DateObject
     {
@@ -23,11 +24,11 @@ public class DateReceiver : MonoBehaviour
 
     public string teste;
 
-  
-
     private void Start()
     {
         this.aviao = GameObject.FindObjectOfType<Aviao>(); 
+        this.menu = GameObject.FindObjectOfType<Menu>();
+        this.interfaceGameOver = GameObject.FindObjectOfType<InterfaceGameOver>(); 
     }
    
     public void Date(string jsonData)
@@ -35,16 +36,38 @@ public class DateReceiver : MonoBehaviour
         DateObject dateObject = JsonUtility.FromJson<DateObject>(jsonData);
         if (dateObject.type == "10")
         {
-            textField.text = $"Type: {dateObject.type}, " +
+           /*  textField.text = $"Type: {dateObject.type}, " +
                              //Type = 10 Dar impulso no avião
                              $"Value: {dateObject.value}, " +
                              $"Resolution: {dateObject.resolution}, " +
-                             $"CaptureTime: {dateObject.captureTime}";
+                             $"CaptureTime: {dateObject.captureTime}"; */
             teste = dateObject.type;
-            this.aoPressionarTecla.Invoke();
+            if (menu == null)
+            {
+                menu = GameObject.FindObjectOfType<Menu>();
+            }
+            if (interfaceGameOver == null)
+            {
+                interfaceGameOver = GameObject.FindObjectOfType<InterfaceGameOver>();
+            }
+            if (menu != null)
+            {
+                if (menu.menuInicial.gameObject.activeInHierarchy)
+                {
+                    menu.IniciarJogo();
+                }
+                else if (menu.JogoRodando)
+                {
+                    if (aviao == null)
+                        aviao = GameObject.FindObjectOfType<Aviao>();
+                    if (aviao != null)
+                        aviao.DarImpulso();
+                }
+                else if (interfaceGameOver != null && interfaceGameOver.gameObject.activeInHierarchy && interfaceGameOver.imagemGameOver.activeSelf)
+                {
+                    menu.VoltarMenuInicial();
+                }
+            }
         }
-
     }
-
-    
 }

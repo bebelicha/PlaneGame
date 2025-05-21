@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class InterfaceGameOver : MonoBehaviour {
     [SerializeField]
-    private GameObject imagemGameOver;
+    public GameObject imagemGameOver;
     [SerializeField]
     private Text valorRecorde;
     [SerializeField]

@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 public class Menu : MonoBehaviour
 {
     [SerializeField]
-    private RectTransform menuInicial;
+    public RectTransform menuInicial;
     [SerializeField]
     private Button botaoIniciar;
     [SerializeField]
@@ -17,7 +17,7 @@ public class Menu : MonoBehaviour
     [SerializeField]
     private RectTransform menuConfiguracoes;
     [SerializeField]
-    private Canvas menuGameOver;
+    public Canvas menuGameOver;
     [SerializeField]
     private Slider sliderAmortecimentoAngular;
     [SerializeField]
@@ -38,6 +38,9 @@ public class Menu : MonoBehaviour
     private Aviao aviao; 
     [SerializeField]
     private ControleDeDificuldade controleDeDificuldade; 
+
+    private bool jogoRodando = false;
+    public bool JogoRodando => jogoRodando;
 
     private void Start()
     {
@@ -88,6 +91,7 @@ public class Menu : MonoBehaviour
         menuGameOver.gameObject.SetActive(false);
         diretor.ReiniciarJogo();
         RetomarJogo();
+        jogoRodando = true;
     }
 
     private void AbrirConfiguracoes()
@@ -97,11 +101,25 @@ public class Menu : MonoBehaviour
         menuConfiguracoes.gameObject.SetActive(true);
     }
 
-    private void VoltarMenuInicial()
+    public void VoltarMenuInicial()
     {
         PausarJogo();
         menuInicial.gameObject.SetActive(true);
         menuConfiguracoes.gameObject.SetActive(false);
+        menuGameOver.gameObject.SetActive(false);
+        jogoRodando = false;
+    }
+
+    public void OnPressionarTecla()
+    {
+        if (menuGameOver.gameObject.activeInHierarchy)
+        {
+            VoltarMenuInicial();
+        }
+        else if (menuInicial.gameObject.activeInHierarchy)
+        {
+            IniciarJogo();
+        }
     }
 
     private void AlterarGravidade(float valor)
