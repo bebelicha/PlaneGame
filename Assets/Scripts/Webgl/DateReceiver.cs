@@ -8,8 +8,8 @@ public class DateReceiver : MonoBehaviour
 {
     public Text textField;
     private Aviao aviao;
-    private Menu menu;
-    private InterfaceGameOver interfaceGameOver;
+    public Menu menu;
+    public InterfaceGameOver interfaceGameOver;
     [System.Serializable]
     public class DateObject
     {
@@ -63,11 +63,11 @@ public class DateReceiver : MonoBehaviour
                     if (aviao != null)
                         aviao.DarImpulso();
                 }
-                else if (interfaceGameOver != null && interfaceGameOver.gameObject.activeInHierarchy && interfaceGameOver.imagemGameOver.activeSelf)
+            }
+            if (interfaceGameOver != null && interfaceGameOver.gameObject.activeInHierarchy && interfaceGameOver.imagemGameOver.activeSelf)
                 {
                     menu.VoltarMenuInicial();
                 }
-            }
         }
     }
 }

@@ -6,7 +6,7 @@ public class Diretor : MonoBehaviour {
     
     private Aviao aviao;
     private Pontuacao pontucao;
-    private InterfaceGameOver interfaceGameOver;
+    public InterfaceGameOver interfaceGameOver;
 
 
 
