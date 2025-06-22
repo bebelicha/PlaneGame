@@ -1,8 +1,5 @@
-using JetBrains.Annotations;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
-using static DateReceiver;
 
 public class DateReceiver : MonoBehaviour
 {
@@ -10,46 +7,44 @@ public class DateReceiver : MonoBehaviour
     private Aviao aviao;
     public Menu menu;
     public InterfaceGameOver interfaceGameOver;
+
     [System.Serializable]
     public class DateObject
     {
         public string type;
         public float value;
-        public int resolution;
         public long captureTime;
     }
 
-    [SerializeField]
-    private UnityEvent aoPressionarTecla;
-
-    public string teste;
-
     private void Start()
     {
-        this.aviao = GameObject.FindObjectOfType<Aviao>(); 
-        this.menu = GameObject.FindObjectOfType<Menu>();
-        this.interfaceGameOver = GameObject.FindObjectOfType<InterfaceGameOver>(); 
+        this.aviao = FindObjectOfType<Aviao>();
+        this.menu = FindObjectOfType<Menu>();
+        this.interfaceGameOver = FindObjectOfType<InterfaceGameOver>();
     }
-   
+
     public void Date(string jsonData)
     {
         DateObject dateObject = JsonUtility.FromJson<DateObject>(jsonData);
-        if (dateObject.type == "10")
+
+        if (dateObject.type == "mouthOpen" && dateObject.value == 1)
         {
-           /*  textField.text = $"Type: {dateObject.type}, " +
-                             //Type = 10 Dar impulso no avião
-                             $"Value: {dateObject.value}, " +
-                             $"Resolution: {dateObject.resolution}, " +
-                             $"CaptureTime: {dateObject.captureTime}"; */
-            teste = dateObject.type;
+            if (textField != null)
+            {
+                textField.text = $"Type: {dateObject.type}, " +
+                                 $"Value: {dateObject.value}, " +
+                                 $"CaptureTime: {dateObject.captureTime}";
+            }
+
             if (menu == null)
             {
-                menu = GameObject.FindObjectOfType<Menu>();
+                menu = FindObjectOfType<Menu>();
             }
             if (interfaceGameOver == null)
             {
-                interfaceGameOver = GameObject.FindObjectOfType<InterfaceGameOver>();
+                interfaceGameOver = FindObjectOfType<InterfaceGameOver>();
             }
+
             if (menu != null)
             {
                 if (menu.menuInicial.gameObject.activeInHierarchy)
@@ -59,15 +54,15 @@ public class DateReceiver : MonoBehaviour
                 else if (menu.JogoRodando)
                 {
                     if (aviao == null)
-                        aviao = GameObject.FindObjectOfType<Aviao>();
+                        aviao = FindObjectOfType<Aviao>();
                     if (aviao != null)
                         aviao.DarImpulso();
                 }
             }
             if (interfaceGameOver != null && interfaceGameOver.gameObject.activeInHierarchy && interfaceGameOver.imagemGameOver.activeSelf)
-                {
-                    menu.VoltarMenuInicial();
-                }
+            {
+                menu.VoltarMenuInicial();
+            }
         }
     }
 }
