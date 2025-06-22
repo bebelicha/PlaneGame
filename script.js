@@ -50,7 +50,7 @@ const camera = new Camera(videoElement, {
     await faceMesh.send({image: videoElement});
   },
   width: 1280,
-  height: 800
+  height: 700
 });
 camera.start();
 
