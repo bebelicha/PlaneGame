@@ -11,13 +11,22 @@ public class Pontuacao : MonoBehaviour {
     private Text textoPontuacao;
     [SerializeField]
     private UnityEvent aoPontuar;
-
-   
+    [SerializeField]
+    private AudioClip somPontuacao; 
+    private AudioSource audioSource; 
+    private void Awake()
+    {
+        this.audioSource = this.GetComponent<AudioSource>();
+    }
     public void AdicionarPontos()
     {
         this.Pontos++;
         this.textoPontuacao.text = this.Pontos.ToString();
         this.aoPontuar.Invoke();
+         if (this.audioSource != null && this.somPontuacao != null)
+        {
+            this.audioSource.PlayOneShot(this.somPontuacao);
+        }
     }
 
     public void Reiniciar()

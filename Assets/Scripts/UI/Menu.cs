@@ -73,6 +73,9 @@ public class Menu : MonoBehaviour
             trilhaSonora.volume = PlayerPrefs.GetFloat("volume");
             sliderVolume.value = trilhaSonora.volume;
         }
+        else{
+            trilhaSonora.volume = 0.1f;
+        }
         if (PlayerPrefs.HasKey("gravityScale"))
         {
             aviao.AlterarGravityScale(PlayerPrefs.GetFloat("gravityScale"));
