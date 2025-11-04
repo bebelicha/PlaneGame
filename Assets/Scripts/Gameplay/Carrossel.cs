@@ -17,7 +17,7 @@ public class Carrossel : MonoBehaviour {
         this.tamanhoRealDaImagem = tamanhoDaImagem * escala;
     }
     void Update () {
-        float deslocamento = Mathf.Repeat(this.velocidade.valor * Time.time, this.tamanhoRealDaImagem/2);
+        float deslocamento = Mathf.Repeat(this.velocidade.valor * Time.time, this.tamanhoRealDaImagem);
         this.transform.position = this.posicaoInicial + Vector3.left * deslocamento;
 	}
 }

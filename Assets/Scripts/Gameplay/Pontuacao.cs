@@ -1,48 +1,63 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-public class Pontuacao : MonoBehaviour {
-    public int Pontos{ get;private  set; }
+public class Pontuacao : MonoBehaviour
+{
+    public int Pontos { get; private set; }
 
     [SerializeField]
     private Text textoPontuacao;
     [SerializeField]
     private UnityEvent aoPontuar;
     [SerializeField]
-    private AudioClip somPontuacao; 
-    private AudioSource audioSource; 
+    private AudioClip somPontuacao;
+
+    private AudioSource audioSource;
+
     private void Awake()
     {
-        this.audioSource = this.GetComponent<AudioSource>();
+        audioSource = GetComponent<AudioSource>();
     }
+
     public void AdicionarPontos()
     {
-        this.Pontos++;
-        this.textoPontuacao.text = this.Pontos.ToString();
-        this.aoPontuar.Invoke();
-         if (this.audioSource != null && this.somPontuacao != null)
+        Pontos++;
+        if (textoPontuacao != null)
         {
-            this.audioSource.PlayOneShot(this.somPontuacao);
+            textoPontuacao.text = Pontos.ToString();
+        }
+        aoPontuar?.Invoke();
+        if (audioSource != null && somPontuacao != null)
+        {
+            audioSource.PlayOneShot(somPontuacao);
         }
     }
 
     public void Reiniciar()
     {
-        this.Pontos = 0;
-        this.textoPontuacao.text = this.Pontos.ToString();
+        Pontos = 0;
+        if (textoPontuacao != null)
+        {
+            textoPontuacao.text = Pontos.ToString();
+        }
     }
 
     public void SalvarRecorde()
     {
-        int recordeAtual = PlayerPrefs.GetInt("recorde");
-        
-        if (this.Pontos > recordeAtual)
+        var recordeAtual = PlayerPrefs.GetInt("recorde");
+        if (Pontos > recordeAtual)
         {
-            PlayerPrefs.SetInt("recorde", this.Pontos);
+            PlayerPrefs.SetInt("recorde", Pontos);
         }
     }
-}
 
+    public void AdicionarListenerPontuacao(UnityAction listener)
+    {
+        if (listener == null)
+        {
+            return;
+        }
+        aoPontuar.AddListener(listener);
+    }
+}

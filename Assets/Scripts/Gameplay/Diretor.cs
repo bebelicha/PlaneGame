@@ -1,49 +1,89 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class Diretor : MonoBehaviour {
-    
+public class Diretor : MonoBehaviour
+{
     private Aviao aviao;
-    private Pontuacao pontucao;
+    private Pontuacao pontuacao;
     public InterfaceGameOver interfaceGameOver;
-
-
+    private Menu menu;
+    private ConversiaGameBridge conversiaBridge;
 
     private void Start()
     {
-        this.aviao = GameObject.FindObjectOfType<Aviao>();
-        this.pontucao = GameObject.FindObjectOfType<Pontuacao>();
-        this.interfaceGameOver = GameObject.FindObjectOfType<InterfaceGameOver>();
- 
+        aviao = GameObject.FindObjectOfType<Aviao>();
+        pontuacao = GameObject.FindObjectOfType<Pontuacao>();
+        interfaceGameOver = GameObject.FindObjectOfType<InterfaceGameOver>();
+        menu = GameObject.FindObjectOfType<Menu>();
+        conversiaBridge = ConversiaGameBridge.Instance;
+    }
+
+    public void IniciarJogo()
+    {
+        if (conversiaBridge == null)
+        {
+            conversiaBridge = ConversiaGameBridge.Instance;
+            if (conversiaBridge == null)
+            {
+                conversiaBridge = GameObject.FindObjectOfType<ConversiaGameBridge>();
+            }
+        }
+
+        if (conversiaBridge != null)
+        {
+            conversiaBridge.StartGameFromMenuButton();
+            return;
+        }
+
+        if (menu == null)
+        {
+            menu = GameObject.FindObjectOfType<Menu>();
+        }
+
+        if (menu != null)
+        {
+            menu.IniciarJogo();
+        }
+        else
+        {
+            ReiniciarJogo();
+        }
     }
 
     public void FinalizarJogo()
     {
         Time.timeScale = 0;
-        
-        this.pontucao.SalvarRecorde();
-        this.interfaceGameOver.MostrarInterface();
 
+        if (pontuacao != null)
+        {
+            pontuacao.SalvarRecorde();
+        }
+        if (interfaceGameOver != null)
+        {
+            interfaceGameOver.MostrarInterface();
+        }
+        conversiaBridge?.ReportGameOver();
     }
 
     public void ReiniciarJogo()
     {
-        this.interfaceGameOver.EsconderInterface();
+        if (interfaceGameOver != null)
+        {
+            interfaceGameOver.EsconderInterface();
+        }
         Time.timeScale = 1;
-        this.aviao.Reiniciar();
-        this.DestruirObstaculos();
-        this.pontucao.Reiniciar();
-        
+        aviao?.Reiniciar();
+        DestruirObstaculos();
+        pontuacao?.Reiniciar();
+        conversiaBridge?.ReportGameRestarted();
     }
+
 
     private void DestruirObstaculos()
     {
-        Obstaculo[] obstaculos = GameObject.FindObjectsByType<Obstaculo>(FindObjectsSortMode.None);
-        foreach (Obstaculo obstaculo in obstaculos)
+        var obstaculos = GameObject.FindObjectsByType<Obstaculo>(FindObjectsSortMode.None);
+        foreach (var obstaculo in obstaculos)
         {
             obstaculo.Destruir();
         }
     }
-
 }

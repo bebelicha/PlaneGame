@@ -12,20 +12,46 @@ public class Aviao : MonoBehaviour
     private UnityEvent aoBater;
     [SerializeField]
     private UnityEvent aoPassarPeloObstaculo;
+
+    [Header("Feedback Visual do Combo")]
+    [SerializeField]
+    private Sprite spriteAlternativo;
+    [SerializeField]
+    private Color comboColor = Color.yellow;
+
     private Vector3 posicaoInicial;
-    private bool deveImpulsionar;
     private Animator animacao;
+    private bool deveImpulsionar;
+
+    private SpriteRenderer spriteRenderer;
+    private Color corOriginal;
+    private Sprite spriteOriginal;
+    private bool comboAtivo;
 
     private void Awake()
     {
         this.posicaoInicial = this.transform.position;
         this.fisica = this.GetComponent<Rigidbody2D>();
         this.animacao = this.GetComponent<Animator>();
+        
+        this.spriteRenderer = GetComponent<SpriteRenderer>();
+        this.corOriginal = this.spriteRenderer.color;
+        this.spriteOriginal = this.spriteRenderer.sprite;
+        this.spriteRenderer.color = this.corOriginal;
+        this.comboAtivo = false;
     }
 
     private void Update()
     {
-        this.animacao.SetFloat("VelocidadeY", this.fisica.linearVelocity.y);
+        if (this.animacao.enabled)
+        {
+            this.animacao.SetFloat("VelocidadeY", this.fisica.linearVelocity.y);
+        }
+
+        if (this.spriteRenderer != null)
+        {
+            this.spriteRenderer.color = this.comboAtivo ? this.comboColor : this.corOriginal;
+        }
     }
 
     private void FixedUpdate()
@@ -45,8 +71,8 @@ public class Aviao : MonoBehaviour
     {
         this.transform.position = this.posicaoInicial;
         this.fisica.simulated = true;
+        this.DesativarCombo();
     }
-
     public void AlterarGravityScale(float valor)
     {
         this.fisica.gravityScale = valor;
@@ -56,7 +82,6 @@ public class Aviao : MonoBehaviour
     {
        this.fisica.angularDamping = valor;
     }
-
 
     private void Impulsionar()
     {
@@ -80,8 +105,74 @@ public class Aviao : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D()
+    private void OnTriggerEnter2D(Collider2D other)
     {
         this.aoPassarPeloObstaculo.Invoke();
+    }
+    public void AtivarCombo()
+    {
+        if (this.spriteRenderer == null)
+        {
+            return;
+        }
+
+        if (this.comboAtivo)
+        {
+            return;
+        }
+
+        this.comboAtivo = true;
+        this.spriteRenderer.color = this.comboColor;
+    }
+
+    public void DesativarCombo()
+    {
+        if (this.spriteRenderer == null)
+        {
+            return;
+        }
+
+        if (!this.comboAtivo)
+        {
+            return;
+        }
+
+        this.comboAtivo = false;
+        this.spriteRenderer.color = this.corOriginal;
+    }
+
+    public void TrocarSpriteTemporariamente()
+    {
+        Debug.Log("[Aviao.cs] Método TrocarSpriteTemporariamente() foi chamado!");
+        StartCoroutine(PiscarSprite());
+    }
+
+    private IEnumerator PiscarSprite()
+    {
+        if (this.spriteAlternativo == null)
+        {
+            Debug.LogError("[Aviao.cs] ERRO: O 'Sprite Alternativo' não foi atribuído no Inspector do Unity!");
+            yield break; 
+        }
+
+        Debug.Log("[Aviao.cs] Trocando para o sprite alternativo.");
+        
+        if (this.animacao != null)
+        {
+            this.animacao.enabled = false;
+        }
+
+        this.spriteRenderer.sprite = this.spriteAlternativo;
+
+        yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("[Aviao.cs] Voltando para o sprite original.");
+        
+        this.spriteRenderer.sprite = this.spriteOriginal;
+
+        if (this.animacao != null)
+        {
+            this.animacao.enabled = true;
+        }
     }
 }
