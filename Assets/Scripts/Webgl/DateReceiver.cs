@@ -8,8 +8,6 @@ public class DateReceiver : MonoBehaviour
     private Aviao aviao;
     public Menu menu;
     public InterfaceGameOver interfaceGameOver;
-    [SerializeField]
-    private TriggerDurationController triggerDurationController;
 
     [SerializeField]
     private UnityEvent aoPressionarTecla;
@@ -21,18 +19,11 @@ public class DateReceiver : MonoBehaviour
         aviao = GameObject.FindObjectOfType<Aviao>();
         menu = GameObject.FindObjectOfType<Menu>();
         interfaceGameOver = GameObject.FindObjectOfType<InterfaceGameOver>();
-        if (triggerDurationController == null)
-        {
-            triggerDurationController = GameObject.FindObjectOfType<TriggerDurationController>();
-        }
         bridge = ConversiaGameBridge.Instance;
         if (bridge != null)
         {
             bridge.TriggerReceived += OnTriggerMessage;
-            bridge.AnalogReceived += OnAnalogMessage;
-            bridge.PreferencesReceived += OnPreferencesMessage;
             bridge.CommandReceived += OnCommandMessage;
-            bridge.InitReceived += OnInitMessage;
         }
 
     }
@@ -42,10 +33,7 @@ public class DateReceiver : MonoBehaviour
         if (bridge != null)
         {
             bridge.TriggerReceived -= OnTriggerMessage;
-            bridge.AnalogReceived -= OnAnalogMessage;
-            bridge.PreferencesReceived -= OnPreferencesMessage;
             bridge.CommandReceived -= OnCommandMessage;
-            bridge.InitReceived -= OnInitMessage;
         }
     }
 
@@ -61,11 +49,6 @@ public class DateReceiver : MonoBehaviour
             return;
         }
 
-        if (triggerDurationController != null)
-        {
-            triggerDurationController.HandleTrigger(message);
-        }
-
         if (string.Equals(message.kind, "movement", System.StringComparison.OrdinalIgnoreCase))
         {
             HandleMovementTrigger(message);
@@ -73,43 +56,6 @@ public class DateReceiver : MonoBehaviour
         else if (string.Equals(message.kind, "combo", System.StringComparison.OrdinalIgnoreCase))
         {
             HandleComboTrigger(message);
-        }
-    }
-
-    private void OnAnalogMessage(ConversiaGameBridge.AnalogMessage message)
-    {
-        if (message?.channels == null || triggerDurationController == null)
-        {
-            return;
-        }
-
-        foreach (var channel in message.channels)
-        {
-            if (channel == null)
-            {
-                continue;
-            }
-            if (channel.name == "mouthOpenness")
-            {
-                triggerDurationController.SetLevel(channel.value);
-            }
-        }
-    }
-
-    private void OnPreferencesMessage(ConversiaGameBridge.PreferencesEnvelope message)
-    {
-        if (message?.entries == null || triggerDurationController == null)
-        {
-            return;
-        }
-
-        foreach (var entry in message.entries)
-        {
-            if (entry == null || entry.key != "preferredTrigger")
-            {
-                continue;
-            }
-            triggerDurationController.SetMovementName(entry.value);
         }
     }
 
@@ -125,18 +71,6 @@ public class DateReceiver : MonoBehaviour
             {
                 menu.VoltarMenuInicial();
             }
-        }
-    }
-
-    private void OnInitMessage(ConversiaGameBridge.InitMessage message)
-    {
-        if (message == null)
-        {
-            return;
-        }
-        if (triggerDurationController != null)
-        {
-            triggerDurationController.SetMovementName(ConversiaGameBridge.Instance?.PrimaryTriggerId ?? "findMouthOpen");
         }
     }
 

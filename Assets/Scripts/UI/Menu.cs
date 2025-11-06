@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
 public class Menu : MonoBehaviour
 {
@@ -38,9 +37,21 @@ public class Menu : MonoBehaviour
     private Aviao aviao; 
     [SerializeField]
     private ControleDeDificuldade controleDeDificuldade; 
+    [SerializeField]
+    private GameObject canvasJogador;
+    [SerializeField]
+    private Pontuacao pontuacao;
 
     private bool jogoRodando = false;
     public bool JogoRodando => jogoRodando;
+    private bool aguardandoPrimeiroPonto;
+
+    private void Awake()
+    {
+        aguardandoPrimeiroPonto = false;
+        GarantirReferencias();
+        OcultarCanvasJogador();
+    }
 
     private void Start()
     {
@@ -54,7 +65,22 @@ public class Menu : MonoBehaviour
         sliderGravityScale.onValueChanged.AddListener(AlterarGravityScale); 
         sliderAmortecimentoAngular.onValueChanged.AddListener(AlterarAmortecimentoAngular);
         sliderTempoParaDificuldadeMaxima.onValueChanged.AddListener(AlterarTempoParaDificuldadeMaxima); 
-         CarregarConfiguracoes();
+        CarregarConfiguracoes();
+        RegistrarPontuacao();
+        if (menuGameOver != null)
+        {
+            menuGameOver.gameObject.SetActive(false);
+        }
+    }
+
+    private void Update()
+    {
+        if (!jogoRodando || !aguardandoPrimeiroPonto)
+        {
+            return;
+        }
+
+        VerificarCanvasJogadorPorPontuacao();
     }
     private void CarregarConfiguracoes()
     {
@@ -91,10 +117,15 @@ public class Menu : MonoBehaviour
     {
         menuInicial.gameObject.SetActive(false);
         menuConfiguracoes.gameObject.SetActive(false);
-        menuGameOver.gameObject.SetActive(false);
+        if (menuGameOver != null)
+        {
+            menuGameOver.gameObject.SetActive(false);
+        }
         diretor.ReiniciarJogo();
         RetomarJogo();
         jogoRodando = true;
+        aguardandoPrimeiroPonto = true;
+        MostrarCanvasJogador();
     }
 
     private void AbrirConfiguracoes()
@@ -109,13 +140,32 @@ public class Menu : MonoBehaviour
         PausarJogo();
         menuInicial.gameObject.SetActive(true);
         menuConfiguracoes.gameObject.SetActive(false);
-        menuGameOver.gameObject.SetActive(false);
+        if (menuGameOver != null)
+        {
+            menuGameOver.gameObject.SetActive(false);
+        }
+        OcultarCanvasJogador();
         jogoRodando = false;
+        aguardandoPrimeiroPonto = false;
+    }
+
+    public void MostrarGameOver()
+    {
+        PausarJogo();
+        menuInicial.gameObject.SetActive(false);
+        menuConfiguracoes.gameObject.SetActive(false);
+        if (menuGameOver != null)
+        {
+            menuGameOver.gameObject.SetActive(true);
+        }
+        OcultarCanvasJogador();
+        jogoRodando = false;
+        aguardandoPrimeiroPonto = false;
     }
 
     public void OnPressionarTecla()
     {
-        if (menuGameOver.gameObject.activeInHierarchy)
+        if (menuGameOver != null && menuGameOver.gameObject.activeInHierarchy)
         {
             VoltarMenuInicial();
         }
@@ -164,5 +214,81 @@ public class Menu : MonoBehaviour
     private void RetomarJogo()
     {
         Time.timeScale = 1;
+    }
+
+    private void RegistrarPontuacao()
+    {
+        GarantirReferencias();
+
+        if (pontuacao != null)
+        {
+            pontuacao.AdicionarListenerPontuacao(QuandoPontuar);
+            VerificarCanvasJogadorPorPontuacao();
+        }
+    }
+
+    private void QuandoPontuar()
+    {
+        VerificarCanvasJogadorPorPontuacao();
+    }
+
+    private void MostrarCanvasJogador()
+    {
+        if (canvasJogador != null)
+        {
+            canvasJogador.SetActive(true);
+        }
+    }
+
+    private void OcultarCanvasJogador()
+    {
+        if (canvasJogador != null)
+        {
+            canvasJogador.SetActive(false);
+        }
+    }
+
+    private void GarantirReferencias()
+    {
+        if (canvasJogador == null)
+        {
+            var encontrados = Resources.FindObjectsOfTypeAll<GameObject>();
+            foreach (var candidato in encontrados)
+            {
+                if (candidato == null || candidato.name != "CanvasJogador")
+                {
+                    continue;
+                }
+
+                if (!candidato.scene.IsValid())
+                {
+                    continue;
+                }
+
+                canvasJogador = candidato;
+                break;
+            }
+        }
+
+        if (pontuacao == null)
+        {
+            pontuacao = FindObjectOfType<Pontuacao>();
+        }
+    }
+
+    private void VerificarCanvasJogadorPorPontuacao()
+    {
+        GarantirReferencias();
+
+        if (pontuacao == null)
+        {
+            return;
+        }
+
+        if (pontuacao.Pontos > 0)
+        {
+            aguardandoPrimeiroPonto = false;
+            OcultarCanvasJogador();
+        }
     }
 }

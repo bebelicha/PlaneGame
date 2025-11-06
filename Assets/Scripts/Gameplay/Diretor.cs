@@ -61,6 +61,11 @@ public class Diretor : MonoBehaviour
         {
             interfaceGameOver.MostrarInterface();
         }
+        if (menu == null)
+        {
+            menu = GameObject.FindObjectOfType<Menu>();
+        }
+        menu?.MostrarGameOver();
         conversiaBridge?.ReportGameOver();
     }
 

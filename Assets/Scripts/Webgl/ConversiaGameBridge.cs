@@ -1,241 +1,14 @@
-    using System;
-    using System.Collections.Generic;
-    using System.Runtime.InteropServices;
-    using System.Text;
-    using UnityEngine;
-    using UnityEngine.SceneManagement;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
-    public class ConversiaGameBridge : MonoBehaviour
-    {
-        public static ConversiaGameBridge Instance { get; private set; }
+public class ConversiaGameBridge : MonoBehaviour
+{
+    public static ConversiaGameBridge Instance { get; private set; }
 
-        public void SendHudFocus(RectTransform target, string targetId = null, string targetLabel = null)
-    {
-        if (!TryComputeHudRect(target, out var snapshot))
-        {
-            SendHudFocusSnapshot(default, false, string.Empty, string.Empty);
-            return;
-        }
-
-        var resolvedId = string.IsNullOrEmpty(targetId) ? (target != null ? target.gameObject.name : string.Empty) : targetId;
-        var resolvedLabel = string.IsNullOrEmpty(targetLabel) && target != null ? target.gameObject.name : targetLabel;
-        SendHudFocusSnapshot(snapshot, true, resolvedId, resolvedLabel);
-    }
-
-    public void ClearHudFocus()
-    {
-        SendHudFocusSnapshot(default, false, string.Empty, string.Empty);
-    }
-
-    private void SendHudFocusSnapshot(HudRectSnapshot snapshot, bool hasRect, string targetId, string targetLabel)
-    {
-        var normalizedRect = hasRect
-            ? new Vector4(snapshot.normalizedX, snapshot.normalizedY, snapshot.normalizedWidth, snapshot.normalizedHeight)
-            : new Vector4(-1f, -1f, -1f, -1f);
-
-        var normalizedTargetId = targetId ?? string.Empty;
-
-        if (!HasHudFocusChanged(normalizedRect, normalizedTargetId, hasRect))
-        {
-            return;
-        }
-
-        if (!hasRect)
-        {
-            lastHudFocusRect = new Vector4(-1f, -1f, -1f, -1f);
-            lastHudFocusTargetId = string.Empty;
-            var clearMessage = new HudFocusMessage
-            {
-                x = 0f,
-                y = 0f,
-                width = 0f,
-                height = 0f,
-                pixelX = 0f,
-                pixelY = 0f,
-                pixelWidth = 0f,
-                pixelHeight = 0f,
-                referenceWidth = 0f,
-                referenceHeight = 0f,
-                normalized = true,
-                timestamp = CurrentTimestamp(),
-            };
-            PostJson(clearMessage);
-            return;
-        }
-
-        lastHudFocusRect = normalizedRect;
-        lastHudFocusTargetId = normalizedTargetId;
-
-        var message = new HudFocusMessage
-        {
-            x = snapshot.normalizedX,
-            y = snapshot.normalizedY,
-            width = snapshot.normalizedWidth,
-            height = snapshot.normalizedHeight,
-            pixelX = snapshot.pixelX,
-            pixelY = snapshot.pixelY,
-            pixelWidth = snapshot.pixelWidth,
-            pixelHeight = snapshot.pixelHeight,
-            referenceWidth = snapshot.referenceWidth,
-            referenceHeight = snapshot.referenceHeight,
-            normalized = true,
-            targetId = string.IsNullOrEmpty(normalizedTargetId) ? null : normalizedTargetId,
-            targetLabel = string.IsNullOrEmpty(targetLabel) ? null : targetLabel,
-            timestamp = CurrentTimestamp(),
-        };
-        PostJson(message);
-    }
-
-    private bool TryComputeHudRect(RectTransform target, out HudRectSnapshot snapshot)
-    {
-        snapshot = default;
-
-        if (target == null || !target.gameObject.activeInHierarchy)
-        {
-            return false;
-        }
-
-        var screenWidth = (float)Screen.width;
-        var screenHeight = (float)Screen.height;
-        if (screenWidth <= 0f || screenHeight <= 0f)
-        {
-            return false;
-        }
-
-        target.GetWorldCorners(hudFocusCorners);
-        var camera = ResolveCanvasCamera(target);
-        var bottomLeft = RectTransformUtility.WorldToScreenPoint(camera, hudFocusCorners[0]);
-        var topRight = RectTransformUtility.WorldToScreenPoint(camera, hudFocusCorners[2]);
-
-        var pixelWidth = topRight.x - bottomLeft.x;
-        var pixelHeight = topRight.y - bottomLeft.y;
-        if (pixelWidth <= 0f || pixelHeight <= 0f)
-        {
-            return false;
-        }
-
-        var clampedPixelWidth = Mathf.Max(0f, pixelWidth);
-        var clampedPixelHeight = Mathf.Max(0f, pixelHeight);
-        var clampedPixelX = Mathf.Max(0f, bottomLeft.x);
-        var pixelTop = Mathf.Max(0f, topRight.y);
-        var clampedPixelY = Mathf.Max(0f, screenHeight - pixelTop);
-
-        var normalizedWidth = clampedPixelWidth / screenWidth;
-        var normalizedHeight = clampedPixelHeight / screenHeight;
-        var normalizedX = clampedPixelX / screenWidth;
-        var normalizedY = clampedPixelY / screenHeight;
-
-        snapshot = new HudRectSnapshot
-        {
-            normalizedX = Mathf.Clamp01(normalizedX),
-            normalizedY = Mathf.Clamp01(normalizedY),
-            normalizedWidth = Mathf.Clamp01(normalizedWidth),
-            normalizedHeight = Mathf.Clamp01(normalizedHeight),
-            pixelX = clampedPixelX,
-            pixelY = clampedPixelY,
-            pixelWidth = clampedPixelWidth,
-            pixelHeight = clampedPixelHeight,
-            referenceWidth = screenWidth,
-            referenceHeight = screenHeight,
-        };
-
-        return snapshot.normalizedWidth > 0f && snapshot.normalizedHeight > 0f;
-    }
-
-    private bool HasHudFocusChanged(Vector4 rect, string targetId, bool hasRect)
-    {
-        if (!hasRect)
-        {
-            return lastHudFocusRect.w >= 0f || !string.IsNullOrEmpty(lastHudFocusTargetId);
-        }
-
-        if (lastHudFocusRect.w < 0f)
-        {
-            return true;
-        }
-
-        if (!string.Equals(lastHudFocusTargetId, targetId, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (Mathf.Abs(lastHudFocusRect.x - rect.x) > HudFocusEpsilon)
-        {
-            return true;
-        }
-
-        if (Mathf.Abs(lastHudFocusRect.y - rect.y) > HudFocusEpsilon)
-        {
-            return true;
-        }
-
-        if (Mathf.Abs(lastHudFocusRect.z - rect.z) > HudFocusEpsilon)
-        {
-            return true;
-        }
-
-        if (Mathf.Abs(lastHudFocusRect.w - rect.w) > HudFocusEpsilon)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    public bool TryBuildHudLayoutEntry(RectTransform target, string targetId, string targetLabel, out HudLayoutEntry entry, out float referenceWidth, out float referenceHeight)
-    {
-        entry = null;
-        referenceWidth = 0f;
-        referenceHeight = 0f;
-
-        if (!TryComputeHudRect(target, out var snapshot))
-        {
-            return false;
-        }
-
-        referenceWidth = snapshot.referenceWidth;
-        referenceHeight = snapshot.referenceHeight;
-
-        entry = new HudLayoutEntry
-        {
-            id = string.IsNullOrEmpty(targetId) ? (target != null ? target.gameObject.name : string.Empty) : targetId,
-            label = string.IsNullOrEmpty(targetLabel) ? null : targetLabel,
-            x = snapshot.normalizedX,
-            y = snapshot.normalizedY,
-            width = snapshot.normalizedWidth,
-            height = snapshot.normalizedHeight,
-            pixelX = snapshot.pixelX,
-            pixelY = snapshot.pixelY,
-            pixelWidth = snapshot.pixelWidth,
-            pixelHeight = snapshot.pixelHeight,
-        };
-
-        return true;
-    }
-
-    public void SendHudLayoutSnapshot(string groupId, IList<HudLayoutEntry> entries, float referenceWidth, float referenceHeight)
-    {
-        if (entries == null || entries.Count == 0)
-        {
-            return;
-        }
-
-        var payload = new HudLayoutEntry[entries.Count];
-        for (int i = 0; i < entries.Count; i++)
-        {
-            payload[i] = entries[i];
-        }
-
-        var message = new HudLayoutMessage
-        {
-            groupId = string.IsNullOrEmpty(groupId) ? null : groupId,
-            referenceWidth = referenceWidth,
-            referenceHeight = referenceHeight,
-            targets = payload,
-            timestamp = CurrentTimestamp(),
-        };
-        PostJson(message);
-    }
     [Serializable]
     private class GameReadyMessage
     {
@@ -272,54 +45,6 @@
         public string source = "game";
         public string type = "preferencesRequest";
         public long timestamp;
-    }
-
-    [Serializable]
-    private class HudFocusMessage
-    {
-        public string source = "game";
-        public string type = "hudFocus";
-        public float x;
-        public float y;
-        public float width;
-        public float height;
-        public float pixelX;
-        public float pixelY;
-        public float pixelWidth;
-        public float pixelHeight;
-        public float referenceWidth;
-        public float referenceHeight;
-        public bool normalized = true;
-        public string targetId;
-        public string targetLabel;
-        public long timestamp;
-    }
-
-    [Serializable]
-    private class HudLayoutMessage
-    {
-        public string source = "game";
-        public string type = "hudLayout";
-        public string groupId;
-        public float referenceWidth;
-        public float referenceHeight;
-        public HudLayoutEntry[] targets;
-        public long timestamp;
-    }
-
-    [Serializable]
-    public class HudLayoutEntry
-    {
-        public string id;
-        public string label;
-        public float x;
-        public float y;
-        public float width;
-        public float height;
-        public float pixelX;
-        public float pixelY;
-        public float pixelWidth;
-        public float pixelHeight;
     }
 
     [Serializable]
@@ -412,20 +137,6 @@
         public bool primary;
     }
 
-    private struct HudRectSnapshot
-    {
-        public float normalizedX;
-        public float normalizedY;
-        public float normalizedWidth;
-        public float normalizedHeight;
-        public float pixelX;
-        public float pixelY;
-        public float pixelWidth;
-        public float pixelHeight;
-        public float referenceWidth;
-        public float referenceHeight;
-    }
-
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
     private static extern void ConversiaBridge_PostMessage(string message);
@@ -442,8 +153,6 @@
     public event Action<CommandMessage> CommandReceived;
     public event Action<InitMessage> InitReceived;
     public event Action<string> DifficultyChanged;
-    public event Action<string> NavigationAnalogChanged;
-    public event Action<float> NavigationLevelChanged;
 
     private Pontuacao pontuacao;
     private Menu menu;
@@ -455,17 +164,10 @@
     private int lastScore;
     private readonly Dictionary<string, string> currentPreferences = new Dictionary<string, string>();
     private string primaryTriggerId = string.Empty;
-    private readonly Dictionary<string, string> analogMovementMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    private string currentNavigationMovement = string.Empty;
-    private readonly Vector3[] hudFocusCorners = new Vector3[4];
-    private Vector4 lastHudFocusRect = new Vector4(-1f, -1f, -1f, -1f);
-    private string lastHudFocusTargetId = string.Empty;
 
     private readonly StringBuilder sharedBuilder = new StringBuilder(256);
 
     private const string DifficultyKey = "difficulty";
-    private const string NavigationAnalogKey = "hudNavigationAnalog";
-    private const float HudFocusEpsilon = 0.002f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
@@ -528,21 +230,6 @@
 
         InitReceived?.Invoke(message);
 
-        analogMovementMap.Clear();
-        if (message.analogChannels != null)
-        {
-            foreach (var analog in message.analogChannels)
-            {
-                if (analog == null || string.IsNullOrEmpty(analog.name))
-                {
-                    continue;
-                }
-
-                analogMovementMap[analog.name] = analog.sourceMovement ?? string.Empty;
-            }
-        }
-        UpdateNavigationMovementFromAnalog();
-
         if (message.triggers != null)
         {
             foreach (var trigger in message.triggers)
@@ -571,7 +258,6 @@
             return;
         }
 
-        ProcessNavigationTrigger(message);
         TriggerReceived?.Invoke(message);
         LogTrigger(message);
     }
@@ -584,9 +270,8 @@
             return;
         }
 
-        AnalogReceived?.Invoke(message);
-        ProcessNavigationAnalogMessage(message);
-        LogAnalog(message);
+    AnalogReceived?.Invoke(message);
+    LogAnalog(message);
     }
 
     public void OnConversiaPreferences(string json)
@@ -637,8 +322,6 @@
             return "normal";
         }
     }
-
-    public string CurrentNavigationAnalog { get; private set; } = string.Empty;
 
     public void ReportComboActivated(string comboName)
     {
@@ -716,7 +399,7 @@
             menu.VoltarMenuInicial();
         }
 
-    var message = string.IsNullOrEmpty(reason) ? "Saida solicitada" : $"Saida: {reason}";
+        var message = string.IsNullOrEmpty(reason) ? "Saida solicitada" : $"Saida: {reason}";
         LogStatus(message);
     }
 
@@ -741,6 +424,7 @@
         LogPreferences();
         LogStatus($"Preferencias atualizadas ({context})");
     }
+
     private void ApplyPreferenceEffect(string key, string value)
     {
         if (string.IsNullOrEmpty(key))
@@ -758,9 +442,6 @@
                 {
                     primaryTriggerId = value;
                 }
-                break;
-            case NavigationAnalogKey:
-                ApplyNavigationAnalogPreference(value);
                 break;
             default:
                 break;
@@ -800,120 +481,6 @@
         DifficultyChanged?.Invoke(CurrentDifficulty);
     }
 
-    private void ApplyNavigationAnalogPreference(string value)
-    {
-        var normalized = string.IsNullOrEmpty(value) ? string.Empty : value.Trim();
-        if (string.Equals(CurrentNavigationAnalog, normalized, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        CurrentNavigationAnalog = normalized;
-        if (!string.IsNullOrEmpty(CurrentNavigationAnalog))
-        {
-            LogStatus($"Canal de navegacao configurado: {CurrentNavigationAnalog}");
-        }
-
-        UpdateNavigationMovementFromAnalog();
-        NavigationAnalogChanged?.Invoke(CurrentNavigationAnalog);
-    }
-    
-    private void UpdateNavigationMovementFromAnalog()
-    {
-        if (string.IsNullOrEmpty(CurrentNavigationAnalog))
-        {
-            currentNavigationMovement = string.Empty;
-            return;
-        }
-
-        if (analogMovementMap.TryGetValue(CurrentNavigationAnalog, out var movement) && !string.IsNullOrEmpty(movement))
-        {
-            currentNavigationMovement = movement;
-            return;
-        }
-
-        currentNavigationMovement = CurrentNavigationAnalog;
-    }
-
-    private void ProcessNavigationAnalogMessage(AnalogMessage message)
-    {
-        if (message?.channels == null)
-        {
-            return;
-        }
-
-        if (string.IsNullOrEmpty(CurrentNavigationAnalog))
-        {
-            return;
-        }
-
-        foreach (var channel in message.channels)
-        {
-            if (channel == null)
-            {
-                continue;
-            }
-
-            if (string.Equals(channel.name, CurrentNavigationAnalog, StringComparison.OrdinalIgnoreCase))
-            {
-                NavigationLevelChanged?.Invoke(Mathf.Clamp01(channel.value));
-                break;
-            }
-        }
-    }
-
-    private void ProcessNavigationTrigger(TriggerMessage message)
-    {
-        if (message == null)
-        {
-            return;
-        }
-
-        if (string.IsNullOrEmpty(currentNavigationMovement))
-        {
-            return;
-        }
-
-        if (!string.Equals(message.kind, "movement", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        if (!string.Equals(message.name, currentNavigationMovement, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        if (!string.Equals(message.state, "update", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(message.state, "start", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        NavigationLevelChanged?.Invoke(Mathf.Clamp01(message.level));
-    }
-
-    private Camera ResolveCanvasCamera(RectTransform rect)
-    {
-        if (rect == null)
-        {
-            return Camera.main;
-        }
-
-        var canvas = rect.GetComponentInParent<Canvas>();
-        if (canvas == null)
-        {
-            return Camera.main;
-        }
-
-        if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-        {
-            return null;
-        }
-
-        return canvas.worldCamera ?? Camera.main;
-    }
-
     private void SendReadyMessage()
     {
         var message = new GameReadyMessage
@@ -938,6 +505,8 @@
 
     private void StartGameInternal()
     {
+        LocateReferences();
+
         if (menu == null)
         {
             menu = FindObjectOfType<Menu>();
@@ -945,7 +514,7 @@
 
         if (menu == null)
         {
-        LogStatus("Menu nao encontrado para iniciar o jogo");
+            LogStatus("Menu nao encontrado para iniciar o jogo");
             return;
         }
 
@@ -956,7 +525,32 @@
 
         menu.IniciarJogo();
         ReportGameRestarted();
-    LogStatus("Jogo iniciado a partir do comando");
+        LogStatus("Jogo iniciado a partir do comando");
+    }
+
+    private void InvokeMenuPrimaryAction()
+    {
+        LocateReferences();
+
+        if (menu == null)
+        {
+            menu = FindObjectOfType<Menu>();
+        }
+
+        if (menu == null)
+        {
+            LogStatus("Menu nao encontrado para acao primaria");
+            return;
+        }
+
+        var estavaRodando = menu.JogoRodando;
+        menu.OnPressionarTecla();
+
+        if (!estavaRodando && menu.JogoRodando)
+        {
+            ReportGameRestarted();
+            LogStatus("Jogo iniciado via acao primaria");
+        }
     }
 
     private void ToggleDifficulty()
@@ -1022,13 +616,13 @@
             sharedBuilder.Length -= 3;
         }
 
-            Debug.Log($"[ConversiaBridge] Analogicos -> {sharedBuilder}");
+        Debug.Log($"[ConversiaBridge] Analogicos -> {sharedBuilder}");
     }
 
     private void LogStats()
     {
         var elapsed = Mathf.Max(0f, Time.time - sessionStartTime);
-          Debug.Log($"[ConversiaBridge] Pontuacao: {lastScore}, Combos: {comboCount}, Tempo: {elapsed:0.0}s");
+        Debug.Log($"[ConversiaBridge] Pontuacao: {lastScore}, Combos: {comboCount}, Tempo: {elapsed:0.0}s");
     }
 
     private void LogPreferences()
@@ -1043,7 +637,7 @@
             sharedBuilder.Append(' ');
         }
 
-            Debug.Log($"[ConversiaBridge] Preferencias -> {sharedBuilder}");
+        Debug.Log($"[ConversiaBridge] Preferencias -> {sharedBuilder}");
     }
 
     private void LogStatus(string message)
@@ -1073,9 +667,13 @@
             return;
         }
 
+        LocateReferences();
+
         var action = (message.action ?? message.reason ?? string.Empty).Trim().ToLowerInvariant();
         if (string.IsNullOrEmpty(action))
         {
+            // Some Conversia builds omit the action text but still expect the default button behaviour.
+            InvokeMenuPrimaryAction();
             return;
         }
 
@@ -1084,7 +682,12 @@
             case "start":
             case "start-game":
             case "iniciar":
-                StartGameInternal();
+            case "play":
+            case "activate":
+            case "activate-current":
+            case "confirm":
+            case "submit":
+                InvokeMenuPrimaryAction();
                 break;
             case "difficulty":
             case "toggle-difficulty":
@@ -1096,6 +699,23 @@
             case "sair":
             case "quit":
                 ExitGame();
+                break;
+            default:
+                LocateReferences();
+
+                if (menu != null)
+                {
+                    var menuVisivel = !menu.JogoRodando;
+                    if (!menuVisivel && menu.menuGameOver != null)
+                    {
+                        menuVisivel = menu.menuGameOver.gameObject.activeInHierarchy;
+                    }
+
+                    if (menuVisivel)
+                    {
+                        InvokeMenuPrimaryAction();
+                    }
+                }
                 break;
         }
     }
@@ -1154,7 +774,7 @@
 
     private static long CurrentTimestamp()
     {
-    return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 
     private static T Deserialize<T>(string json) where T : class
